@@ -105,12 +105,12 @@ Synthetic fallback (no download): `./synth.sh` (refuses unless `--force`).
 ./train.sh          # train (40 epochs, early stopping, patience 8)
 ./eval.sh           # score the checkpoint on the official test set
 ./prepare.sh        # resample the real corpus + validation split
-./synth.sh          # generate a synthetic corpus (optional)
+
 ./stop.sh           # stop a running dashboard
-./help.sh           # list every script
+
 ```
 
-Every script supports `-h/--help` and works from any directory.
+
 
 ## Dashboard
 
@@ -132,16 +132,8 @@ Five tabs:
 The live tab needs `http://localhost:7860` (a secure context); the LAN IP will not
 be allowed to open the microphone by the browser.
 
-## Notes on speed
-
-`D:` is a Windows drive mounted into WSL over 9p, which is slow for the tens of
-thousands of small file reads training performs each epoch. Training therefore
-runs noticeably slower from `data/` on `D:` than it would from the Linux disk.
-The already-converted 16 kHz set is ~2.3 GB; the 48 kHz originals in `data/_raw`
-are kept for reference.
 
 ## Metrics
 
 - **STOI** (intelligibility, 0..1, higher is better) is always reported.
-- **PESQ** (quality) needs the `pesq` C extension and a compiler. It is optional;
-  without it `eval.py` reports STOI only.
+
