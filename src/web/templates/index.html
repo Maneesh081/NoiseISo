@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Speech Enhancement</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo"></span>
+      <span>Speech Enhancement</span>
+      <span class="tag">U-Net</span>
+    </div>
+    <nav class="tabs">
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="dataset">Dataset</button>
+      <button class="tab" data-tab="model">Model</button>
+      <button class="tab" data-tab="enhance">Enhance</button>
+      <button class="tab" data-tab="live">Live</button>
+    </nav>
+    <div class="status" id="status">loading</div>
+  </header>
+
+  <main>
+    <section id="overview" class="panel active">
+      <div class="hero">
+        <h1>Real-time noise suppression</h1>
+        <p class="lede">A U-Net predicts a 0&ndash;1 mask over the noisy spectrogram and
+          multiplies it in, pulling the speaker out of background noise. Trained on
+          VoiceBank + DEMAND.</p>
+      </div>
+
+      <div class="kpis" id="kpis"></div>
+
+      <h2>Model on the test set</h2>
+      <p class="muted" id="overview-note"></p>
+      <div class="chart-grid" id="overview-charts"></div>
+
+      <div class="two-col" id="overview-files"></div>
+    </section>
+
+    <section id="dataset" class="panel">
+      <h2>Dataset</h2>
+      <p class="lede">VoiceBank + DEMAND pairs every clean sentence with the same
+        sentence mixed with real-world noise (traffic, cafe, station, kitchen, ...)
+        at four signal-to-noise ratios. The model never sees the test speakers.</p>
+
+      <div class="stat-grid" id="dataset-stats"></div>
+      <div class="chips-block">
+        <div><span class="label">Signal-to-noise ratios</span>
+          <div class="chips" id="dataset-snr"></div></div>
+        <div><span class="label">DEMAND noise types</span>
+          <div class="chips" id="dataset-noise"></div></div>
+      </div>
+
+      <h3>Sample pairs</h3>
+      <p class="muted">Listen to the noisy clip and the clean original, and compare
+        their spectrograms.</p>
+      <div class="samples" id="dataset-samples"></div>
+    </section>
+
+    <section id="model" class="panel">
+      <h2>Model</h2>
+      <p class="lede">The network sees the magnitude spectrogram as a grayscale image,
+        predicts a mask the same size, and multiplies that mask into the noisy
+        spectrogram. The original noisy phase is reused to synthesize the waveform.</p>
+
+      <div class="arch" aria-label="U-Net architecture">
+        <div class="arch-node"><b>Input</b><span>noisy spectrogram</span></div>
+        <div class="arch-arrow">&rarr;</div>
+        <div class="arch-node"><b>Encoder</b><span>4 down blocks</span></div>
+        <div class="arch-arrow">&rarr;</div>
+        <div class="arch-node"><b>Bottleneck</b><span>deepest features</span></div>
+        <div class="arch-arrow">&rarr;</div>
+        <div class="arch-node"><b>Decoder</b><span>4 up + skips</span></div>
+        <div class="arch-arrow">&rarr;</div>
+        <div class="arch-node accent"><b>Mask</b><span>0&ndash;1 per pixel</span></div>
+        <div class="arch-arrow">&times;</div>
+        <div class="arch-node"><b>Noisy spec</b><span>element-wise</span></div>
+        <div class="arch-arrow">&rarr;</div>
+        <div class="arch-node"><b>ISTFT</b><span>with noisy phase</span></div>
+      </div>
+
+      <div class="stat-grid" id="model-stats"></div>
+
+      <div class="two-col">
+        <div class="card">
+          <h3>Training setup</h3>
+          <div id="model-config" class="table"></div>
+        </div>
+        <figure class="card">
+          <figcaption>Loss over epochs</figcaption>
+          <img id="model-loss" alt="Training and validation loss">
+        </figure>
+      </div>
+    </section>
+
+    <section id="enhance" class="panel">
+      <h2>Enhance a clip</h2>
+      <p class="lede">Upload a noisy recording. Any sample rate works &mdash; it is
+        converted to 16 kHz for the model. You get the cleaned audio, both
+        spectrograms, and a waveform comparison.</p>
+
+      <div class="enhance-controls">
+        <label class="dropzone" id="dropzone">
+          <input type="file" id="file-input" accept="audio/*">
+          <span class="dz-icon"></span>
+          <span><b>Choose an audio file</b> or drop it here</span>
+          <small>wav, flac, ogg, mp3, m4a</small>
+        </label>
+        <div class="demo-panel">
+          <span class="label">Or try a bundled clip</span>
+          <div class="demo-list" id="demo-list"></div>
+        </div>
+      </div>
+
+      <div id="enhance-status" class="status-line"></div>
+      <div id="enhance-result" class="result hidden"></div>
+    </section>
+
+    <section id="live" class="panel">
+      <h2>Live microphone</h2>
+      <p class="lede">Speak, watch the live spectrogram, then press stop. The recording
+        is cleaned by the same model. Browser audio processing (echo cancellation,
+        noise suppression, auto gain) is disabled so the model hears the raw room.</p>
+
+      <div class="live-bar">
+        <button id="live-btn" class="btn primary">Start recording</button>
+        <span id="live-timer" class="mono">0.0 s</span>
+        <span id="live-hint" class="muted">Microphone requires http://localhost:7860</span>
+      </div>
+
+      <div class="card live-canvas-card">
+        <canvas id="live-canvas" width="960" height="180"></canvas>
+      </div>
+
+      <div id="live-status" class="status-line"></div>
+      <div id="live-result" class="result hidden"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>U-Net speech enhancement</span>
+    <span class="dot"></span>
+    <span>16 kHz</span>
+    <span class="dot"></span>
+    <span>magnitude mask + noisy phase</span>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+# Core deep learning.
+# NOTE: torch + torchaudio are installed from the PyTorch CUDA index, because the
+# default PyPI index does not carry CUDA-enabled builds. See README for the exact
+# command that was used on this machine.
+torch
+torchaudio
+
+# Audio + signal processing.
+numpy
+scipy
+soundfile
+librosa
+
+# Plots (the before/after spectrogram images in the web UI).
+matplotlib
+pillow
+
+# Training / logging.
+tensorboard
+
+# Objective metrics.
+pystoi
+
+# NOTE on PESQ: the `pesq` package is a C extension and needs a compiler at install
+# time (`pip install pesq`). It is deliberately NOT listed as a hard requirement
+# because it cannot build on every machine. When it is absent, eval.py reports STOI
+# only and says so explicitly rather than crashing. To enable it, uncomment:
+# pesq
+
+# Web interface (FastAPI backend + hand-written HTML/CSS/JS frontend).
+fastapi
+uvicorn
